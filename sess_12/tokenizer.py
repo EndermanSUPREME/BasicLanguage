@@ -12,6 +12,7 @@ patterns = [
     [r"print","print"], # print keyword
     [r"if","if"],
     [r"else","else"],
+    [r"for","for"],
     [r"while","while"],
     [r"continue","continue"],
     [r"break","break"],

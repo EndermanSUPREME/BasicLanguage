@@ -80,12 +80,13 @@ def test_parse_logical_factor():
     """
     logical_factor = relational_expression ;
     """
-    print("testing parse_logical_factor()")
+    print(f"{tokenizer.INFO} Testing Parse Logical Factor. . .")
     for s in ["1", "2+2", "3<4"]:
         tokens = tokenizer.tokenize(s)
         ast1, tokens1 = parse_logical_factor(tokens)
         ast2, tokens2 = parse_relational_expr(tokens)
         assert ast1 == ast2
+    print(f"{tokenizer.OK} Testing Parse Logical Factor Passed!")
 def parse_logical_factor(tokens):
     """
     logical_factor = relational_expression ;
@@ -258,9 +259,19 @@ def test_parse_relational_expr():
             "left": {"tag": "number", "value": 2},
             "right": {"tag": "number", "value": 4},
         }, f"AST = [{ast}]"
+
     tokens = tokenizer.tokenize("2>4==3")
     ast, tokens = parse_relational_expr(tokens)  
     assert ast=={'tag': '==', 'left': {'tag': '>', 'left': {'tag': 'number', 'value': 2}, 'right': {'tag': 'number', 'value': 4}}, 'right': {'tag': 'number', 'value': 3}}
+
+
+    tokens = tokenizer.tokenize("2<3")
+    ast, tokens = parse_relational_expr(tokens)  
+    assert ast=={'tag': '<', 'left': {'tag': 'number', 'value': 2}, 'right': {'tag': 'number', 'value': 3}}
+
+    tokens = tokenizer.tokenize("x != 5")
+    ast, tokens = parse_relational_expr(tokens)
+    assert ast=={'tag': '!=', 'left': {'tag': 'identifier', 'value': 'x'}, 'right': {'tag': 'number', 'value': 5}}
 
     print(f"{tokenizer.OK} Parse Relational Expression Rule Test Passed!")
 def parse_relational_expr(tokens):
@@ -272,22 +283,6 @@ def parse_relational_expr(tokens):
         node = {"tag":tag, "left": node, "right": right_node}
     return node, tokens
 
-
-def parse_assignment_stmt(tokens):
-    """
-        assignment_stmt = expr [ "=" expr ]
-    """
-    target, tokens = parse_expr(tokens)
-    if tokens[0]["tag"] == "equals":
-        tokens = tokens[1:]
-        value, tokens = parse_expr(tokens)
-        return {
-                "tag": "assign",
-                "target": target,
-                "value": value
-            }, tokens
-def test_assignment_stmt():
-    print()
 
 # statement = <print> expression | expression
 def test_parse_stmt():
@@ -330,17 +325,6 @@ def parse_stmt(tokens):
 
     return parse_assignment_stmt(tokens)
 
-def test_parse_assignment_stmt():
-    print(f"{tokenizer.INFO} Testing Parse Assignment Statement. . .")
-    ast, tokens = parse_assignment_stmt(tokenizer.tokenize("i=2"))
-    assert ast == {
-        "tag": "assign",
-        "target": {"tag": "identifier", "value": "i"},
-        "value": {"tag": "number", "value": 2},
-    }
-    ast, tokens = parse_assignment_stmt(tokenizer.tokenize("2"))
-    assert ast == {"tag": "number", "value": 2}
-    print(f"{tokenizer.OK} Parse Assignment Statement Rule Test Passed!")
 def parse_assignment_stmt(tokens):
     # assignment_statement = expression [ "=" expression ] ;
     target, tokens = parse_expr(tokens)
@@ -353,6 +337,17 @@ def parse_assignment_stmt(tokens):
             'value': value
         }, tokens
     return target, tokens
+def test_parse_assignment_stmt():
+    print(f"{tokenizer.INFO} Testing Parse Assignment Statement. . .")
+    ast, tokens = parse_assignment_stmt(tokenizer.tokenize("i=2"))
+    assert ast == {
+        "tag": "assign",
+        "target": {"tag": "identifier", "value": "i"},
+        "value": {"tag": "number", "value": 2},
+    }
+    ast, tokens = parse_assignment_stmt(tokenizer.tokenize("2"))
+    assert ast == {"tag": "number", "value": 2}
+    print(f"{tokenizer.OK} Parse Assignment Statement Rule Test Passed!")
 
 
 def test_parse_stmt_block():
@@ -381,11 +376,11 @@ def parse_stmt_block(tokens):
 
     if tokens[0]["tag"] != "r_curly": # end of block
         statement, tokens = parse_stmt(tokens)
-        print(statement)
+        # print(statement)
         ast["statements"].append(statement)
     while tokens[0]["tag"] == ";":
         statement, tokens = parse_stmt(tokens[1:])
-        print(statement)
+        # print(statement)
         ast["statements"].append(statement)
 
     assert tokens[0]["tag"] == "r_curly", f"Malformed Statement Block Token -> {tokens[0]['tag']}"
@@ -408,9 +403,10 @@ def test_parse_print_stmt():
     """
     print_statement = "print" [ expression ] ;
     """
-    print("testing parse_print_statement...")
+    print(f"{tokenizer.INFO} Testing Parse Print Statement. . .")
     ast = parse_print_stmt(tokenizer.tokenize("print 1"))[0]
     assert ast == {"tag": "print", "value": {"tag": "number", "value": 1}}
+    print(f"{tokenizer.OK} Testing Parse Print Statement Passed!")
 
 
 def parse_if_stmt(tokens):
@@ -446,6 +442,8 @@ def test_parse_if_stmt():
     """
     if_statement = "if" "(" expression ")" statement_block [ "else" statement_block ]
     """
+    print(f"{tokenizer.INFO} Testing Parse If Statement. . .")
+
     ast , _= parse_if_stmt(tokenizer.tokenize("if(1){print(2)}"))
     assert ast == {
         'tag': 'if', 
@@ -463,6 +461,7 @@ def test_parse_if_stmt():
         )
     assert ast == {'tag': 'if', 'condition': {'tag': 'number', 'value': 1}, 'then': {'tag': 'block', 'statements': [{'tag': 'print', 'value': {'tag': 'number', 'value': 2}}]}, 'else': {'tag': 'block', 'statements': [{'tag': 'print', 'value': {'tag': 'number', 'value': 3}}]}}
 
+    print(f"{tokenizer.OK} Testing Parse If Statement Passed!")
 
 def parse_while_stmt(tokens):
     """
@@ -490,6 +489,8 @@ def test_parse_while_stmt():
     """
     while_statement = "while" "(" expression ")" statement_block 
     """
+    print(f"{tokenizer.INFO} Testing Parse While Statement. . .")
+
     ast , _= parse_while_stmt(tokenizer.tokenize("while(1){print(2)}"))
     assert ast == {
         'tag': 'while', 
@@ -498,8 +499,9 @@ def test_parse_while_stmt():
             {'tag': 'block', 'statements': [
                 {'tag': 'print', 'value': {'tag': 'number', 'value': 2}}]}
     }
+    print(f"{tokenizer.OK} Testing Parse While Statement Passed!")
 
-def parse_for_loop():
+def parse_for_loop(tokens):
     """
     condition_statement = relational_expression
     update_statement = assignment_statement
@@ -515,15 +517,31 @@ def parse_for_loop():
 
     # parse the statements (assignment, condition, update)
     control = []
-    assignment_stmt, tokens = parse_arithmetic_expr(tokens)
+
+    # print("Looking at Init")
+    # print(tokens, end="\n\n")
+
+    assignment_stmt, tokens = parse_assignment_stmt(tokens)
     control.append(["init_stmt",assignment_stmt])
+    assert tokens[0]["tag"] == ";"
+    tokens = tokens[1:]
+
+    # print("After Init")
+    # print(tokens, end="\n\n")
 
     condition_stmt, tokens = parse_relational_expr(tokens)
     control.append(["condition_stmt",condition_stmt])
-    
-    update_stmt, tokens = parse_expr(tokens)
+    assert tokens[0]["tag"] == ";"
+    tokens = tokens[1:]
+
+    # print("After Condition")
+    # print(tokens, end="\n\n")
+
+    update_stmt, tokens = parse_assignment_stmt(tokens)
     control.append(["update_stmt",update_stmt])
-    
+    assert tokens[0]["tag"] == ";"
+    tokens = tokens[1:]
+
     assert tokens[0]["tag"] == "r_paran"
     tokens = tokens[1:]
 
@@ -536,26 +554,24 @@ def parse_for_loop():
 
     return ast, tokens
 def test_parse_for_loop():
-    ast , _= parse_while_stmt(tokenizer.tokenize("for(i=0;i<10;i=i+1){print(i)}"))
-
-    print(ast)
+    print(f"{tokenizer.INFO} Testing Parse For Loop. . .")
+    ast , _= parse_for_loop(tokenizer.tokenize("for(i=0;i<10;i=i+1;){print(i)}"))
 
     assert ast == {
-        'tag': 'for', 
-        'condition': [
-                ["init_stmt", ""],
-                ["condition_stmt", ""],
-                ["update_stmt", ""]
-        ],
-        'loop': 
-            {
+            'tag': 'for',
+            'control': [
+                ['init_stmt', {'tag': 'assign', 'target': {'tag': 'identifier', 'value': 'i'}, 'value': {'tag': 'number', 'value': 0}}],
+                ['condition_stmt', {'tag': '<', 'left': {'tag': 'identifier', 'value': 'i'}, 'right': {'tag': 'number', 'value': 10}}],
+                ['update_stmt', {'tag': 'assign', 'target': {'tag': 'identifier', 'value': 'i'}, 'value': {'tag': 'plus', 'left': {'tag': 'identifier', 'value': 'i'}, 'right': {'tag': 'number', 'value': 1}}}]
+            ],
+            'loop': {
                 'tag': 'block', 'statements': [
-                    {
-                        'tag': 'print', 'value': {'tag': 'identifier', 'value': 'i'}
-                    }
+                    {'tag': 'print', 'value': {'tag': 'identifier', 'value': 'i'}}
                 ]
             }
-    }
+        }
+    
+    print(f"{tokenizer.OK} Testing Parse For Loop Passed!")
 
 def parse_prgm(tokens):
     # program = [ statement { ";" statement } ] ;
