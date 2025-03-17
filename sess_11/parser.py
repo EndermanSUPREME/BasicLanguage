@@ -320,10 +320,10 @@ def parse_stmt(tokens):
     if tag == "while":
         return parse_while_stmt(tokens)
     if tag == "function":
-        print(f"{INFO} Coming Soon!")
+        print(f"{tokenizer.INFO} Coming Soon!")
         #return parse_function_stmt(tokens)
     if tag == "return":
-        print(f"{INFO} Coming Soon!")
+        print(f"{tokenizer.INFO} Coming Soon!")
         #return parse_return_stmt(tokens)
     if tag == "print":
         return parse_print_stmt(tokens)
