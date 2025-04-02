@@ -90,11 +90,90 @@ def test_evaluate_identifier():
 
     print(f"{tokenizer.OK} Evaluate Identifier Passed!")
 
+def test_if_stmt():
+    print(f"{tokenizer.INFO} Testing evaluate If Statements. . .")
+
+    env = {"x":4,"y":5}
+    assert eval("if(1){x=8}",env) == None
+    assert env["x"] == 8, f"Expected x=8, got x={env['x']}"
+
+    assert eval("if(0){x=5}else{y=9}",env) == None
+    assert env["x"] == 8, f"Expected x=8, got x={env['x']}"
+    assert env["y"] == 9, f"Expected y=9, got y={env['y']}"
+
+    print(f"{tokenizer.OK} Evaluate If Statements Passed!")
+
+def test_while_stmt():
+    print(f"{tokenizer.INFO} Testing evaluate While Statements. . .")
+
+    env = {"x":4,"y":5}
+    assert eval("while(x<6){y=y+1;x=x+1}",env) == None
+    assert env["x"] == 6
+    assert env["y"] == 7
+
+    print(f"{tokenizer.OK} Evaluate While Statements Passed!")
+
 # ============================================================================
 # ============================================================================
 
 def evaluate(ast, environ={}):
     try:
+        if ast["tag"] == "if":
+            condition_value = evaluate(ast["condition"], environ)
+            if condition_value:
+                evaluate(ast["then"], environ)
+            else:
+                if ast["else"]:
+                    evaluate(ast["else"], environ)
+            return None
+        if ast["tag"] == "while":
+            print(ast)
+            while evaluate(ast["condition"], environ):
+                evaluate(ast["do"], environ)
+            return None
+        if ast["tag"] == "assign":
+            target = ast["target"]
+            assert target["tag"] == "identifier"
+            identifier = target["value"]
+            assert type(identifier) is str
+            value = evaluate(ast["value"],environ)
+            environ[identifier] = value
+        if ast["tag"] == "&&":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value and right_value
+        if ast["tag"] == "||":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value or right_value
+        if ast["tag"] == "!":
+            value = evaluate(ast["value"], environ)
+            return not value
+        if ast["tag"] == "<":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value < right_value
+        if ast["tag"] == ">":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value > right_value
+        if ast["tag"] == "<=":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value <= right_value
+        if ast["tag"] == ">=":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value >= right_value
+        if ast["tag"] == "==":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value == right_value
+        if ast["tag"] == "!=":
+            left_value = evaluate(ast["left"], environ)
+            right_value = evaluate(ast["right"], environ)
+            return left_value != right_value
+        
         if ast["tag"] == "number":
             return ast["value"]
         if ast["tag"] == "identifier":
@@ -108,15 +187,16 @@ def evaluate(ast, environ={}):
             if ast["value"] in environ:
                 return environ[ast["value"]]
             
-            # handle parent environment
+            # handle parent environ
             parent_env = environ
             while "$parent" in parent_env:
                 parent_env = environ["$parent"]
                 if ast["value"] in parent_env:
                     return parent_env[ast["value"]]
-                raise Exception(f"Value {ast['value']} not found in parent environment {parent_env}.")
+                raise Exception(f"Value {ast['value']} not found in parent environ {parent_env}.")
             
             raise Exception(f"Unknown Environment Identifier {identifier}")
+        
         if ast["tag"] in ["plus","minus","times","division"]:
             # Recursively evaluate both sides of the tree to a literal value
             left_value = evaluate(ast["left"],environ)
@@ -135,6 +215,9 @@ def evaluate(ast, environ={}):
                 return left_value * right_value
             if ast["tag"] == "division":
                 return left_value / right_value
+        if ast["tag"] == "block":
+            for statement in ast["statements"]:
+                _ = evaluate(statement, environ)
         if ast["tag"] == "print":
             global print_buffer
             # evaluating what we are attempting to print
@@ -160,7 +243,12 @@ if __name__ == "__main__":
     test_evaluate_subtraction()
     test_evaluate_multiplication()
     test_evaluate_division()
+
     test_evaluate_expression()
     test_evaluate_print()
     test_evaluate_identifier()
+
+    test_if_stmt()
+    test_while_stmt()
+
     print(f"{tokenizer.OK} Evaluator is Functional!")
