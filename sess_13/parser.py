@@ -283,6 +283,89 @@ def parse_relational_expr(tokens):
         node = {"tag":tag, "left": node, "right": right_node}
     return node, tokens
 
+def test_parse_logical_term():
+    """
+    logical_term = logical_factor { "&&" logical_factor }
+    """
+    print(f"{tokenizer.INFO} Testing Parse Logical Term. . .")
+
+    tokens = tokenizer.tokenize("x")
+    ast, tokens = parse_logical_term(tokens)
+    assert ast == {"tag": "identifier", "value": "x"}
+
+    tokens = tokenizer.tokenize("x&&y")
+    ast, tokens = parse_logical_term(tokens)
+    assert ast == {
+        "tag": "&&",
+        "left": {"tag": "identifier", "value": "x"},
+        "right": {"tag": "identifier", "value": "y"},
+    }
+
+    tokens = tokenizer.tokenize("x&&y&&z")
+    ast, tokens = parse_logical_term(tokens)
+    assert ast == {
+        "tag": "&&",
+        "left": {
+            "tag": "&&",
+            "left": {"tag": "identifier", "value": "x"},
+            "right": {"tag": "identifier", "value": "y"},
+        },
+        "right": {"tag": "identifier", "value": "z"},
+    }
+
+    print(f"{tokenizer.OK} Parse Logical Term Rule Test Passed!")
+def parse_logical_term(tokens):
+    """
+    logical_term = logical_factor { "&&" logical_factor }
+    """
+    node, tokens = parse_logical_factor(tokens)
+    while tokens[0]["tag"] == "&&":
+        tag = tokens[0]["tag"]
+        next_node, tokens = parse_logical_factor(tokens[1:])
+        node = {"tag": tag, "left": node, "right": next_node}
+    return node, tokens
+
+
+def test_parse_logical_expr():
+    """
+    logical_expression = logical_term { "||" logical_term }
+    """
+    print(f"{tokenizer.INFO} Testing Parse Logical Expression. . .")
+
+    tokens = tokenizer.tokenize("x")
+    ast, tokens = parse_logical_expr(tokens)
+    assert ast == {"tag": "identifier", "value": "x"}
+    tokens = tokenizer.tokenize("x||y")
+    ast, tokens = parse_logical_expr(tokens)
+    assert ast == {
+        "tag": "||",
+        "left": {"tag": "identifier", "value": "x"},
+        "right": {"tag": "identifier", "value": "y"},
+    }
+    tokens = tokenizer.tokenize("x||y&&z")
+    ast, tokens = parse_logical_expr(tokens)
+    assert ast == {
+        "tag": "||",
+        "left": {"tag": "identifier", "value": "x"},
+        "right": {
+            "tag": "&&",
+            "left": {"tag": "identifier", "value": "y"},
+            "right": {"tag": "identifier", "value": "z"},
+        },
+    }
+
+    print(f"{tokenizer.OK} Parse Logical Expression Rule Test Passed!")
+def parse_logical_expr(tokens):
+    """
+    logical_expression = logical_term { "||" logical_term }
+    """
+    node, tokens = parse_logical_term(tokens)
+    while tokens[0]["tag"] == "||":
+        tag = tokens[0]["tag"]
+        next_node, tokens = parse_logical_term(tokens[1:])
+        node = {"tag": tag, "left": node, "right": next_node}
+    return node, tokens
+
 
 # statement = <print> expression | expression
 def test_parse_stmt():
@@ -470,11 +553,14 @@ def parse_while_stmt(tokens):
     assert tokens[0]["tag"] == "while"
     tokens = tokens[1:]
 
-    assert tokens[0]["tag"] == "l_paran"
+    assert tokens[0]["tag"] == "l_paran", f"Expected 'l_paran', got {tokens[0]['tag']}"
     tokens = tokens[1:]
 
-    condition, tokens = parse_expr(tokens)
-    assert tokens[0]["tag"] == "r_paran"
+    condition, tokens = parse_relational_expr(tokens)
+
+    print(condition)
+
+    assert tokens[0]["tag"] == "r_paran", f"Expected 'r_paran', got {tokens[0]['tag']}"
     tokens = tokens[1:]
 
     do_statement, tokens = parse_stmt_block(tokens)
@@ -771,8 +857,11 @@ def main():
 
     test_parse_arithmetic_expr()
     test_parse_relational_expr()
-    test_parse_logical_factor()
     test_parse_assignment_stmt()
+
+    test_parse_logical_factor()
+    test_parse_logical_term()
+    test_parse_logical_expr()
 
     test_parse_stmt_block()
 
