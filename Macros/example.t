@@ -11,3 +11,9 @@ __ENDER__=(){
    print 10
 };
 __ENDER__;
+
+__CONNER__=(){
+   print 27
+};
+
+__CONNER__;

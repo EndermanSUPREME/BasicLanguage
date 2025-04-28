@@ -26,20 +26,30 @@ def evaluate(ast, environment={}):
         environment['_kentid_'] = "nallahab@kent.edu"
         return None
     if ast["tag"] == "macro_call":
-        print("MACRO CALL!")
+        macro_target = ast["target"]
+        macro = None
+        for m in macro_list:
+            if m["macro_target"].replace('=', '') == macro_target:
+                macro = m
+                break  # If you only need the first match
+        if not macro:
+            raise Exception(f"Macro '{macro_target}' not found!")
+
+        macro_env = {"$parent": environment}
+
+        evaluate(macro["statements"], macro_env)
+        return None
     if ast["tag"] == "macro_definition":
-        """
-            Need to evaluate the statements & push parameters into the env
-            ast == {
-                "tag": "macro_definition",
-                "value": {
-                    "macro_target": "__EXAMPLE__=",
-                    "parameters" : {"tag": "identifier_list", "identifiers": []},
-                    "statements" : {"tag": "block", "statements": []}
-                }
-            }
-        """
-        print("MACRO DEF!")
+        macro_target = ast["value"]["macro_target"]
+        parameters = ast["value"]["parameters"]
+        statements = ast["value"]["statements"]
+
+        macro_list.append({
+            "macro_target": macro_target,
+            "parameters": parameters,
+            "statements": statements
+        })
+        return None
     if ast["tag"] == "print":
         value = evaluate(ast["value"], environment)
         s = str(value)
