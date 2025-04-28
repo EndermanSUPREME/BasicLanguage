@@ -774,13 +774,19 @@ def test_parse_macro():
         assert tokens[0]["tag"] is None
 def parse_macro_call(tokens):
     """
-    MACRO_CALL = MACRO ;
+    MACRO_CALL = MACRO [ identifier_list ] ;
     """
     macro = tokens[0]["value"]
     assert tokens[0]["tag"] == "macro", f"Expected tag 'macro', got {tokens[0]['tag']}"
     tokens = tokens[1:]
+
+    # parse the tokens to capture the arguments used in the macro call (review macro_definition implemtation to do this)
+    macro_args = []
+
+    # after parsing the macro arguments (identifier list) we expect a colon
     assert (tokens[0]["tag"] == ";"), f"Expected ';', got {tokens[0]['tag']}"
-    return {"tag": "macro_call", "target": macro}, tokens
+
+    return {"tag": "macro_call", "target": macro, "args": macro_args}, tokens
 def test_parse_macro_call():
     print("testing parse_macro_call()")
     tokens = tokenize("_LINE_;")
