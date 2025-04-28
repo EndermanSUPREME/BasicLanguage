@@ -775,6 +775,9 @@ def test_parse_macro():
 def parse_macro_call(tokens):
     """
     MACRO_CALL = MACRO [ identifier_list ] ;
+    EXAMPLE:
+            __LINE__;
+            __SUMS__(2,6);
     """
     macro = tokens[0]["value"]
     assert tokens[0]["tag"] == "macro", f"Expected tag 'macro', got {tokens[0]['tag']}"
