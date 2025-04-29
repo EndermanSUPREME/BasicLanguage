@@ -35,8 +35,18 @@ def evaluate(ast, environment={}):
         if not macro:
             raise Exception(f"Macro '{macro_target}' not found!")
 
+        # Create a new environment for the macro execution
         macro_env = {"$parent": environment}
 
+        # Bind arguments to parameters in the macro environment
+        if "args" in ast and macro["parameters"]["identifiers"]:
+            if len(ast["args"]) != len(macro["parameters"]["identifiers"]):
+                raise Exception(f"Macro '{macro_target}' expects {len(macro['parameters']['identifiers'])} arguments, got {len(ast['args'])}")
+            for param, arg in zip(macro["parameters"]["identifiers"], ast["args"]):
+                param_name = param["value"]
+                macro_env[param_name] = evaluate(arg, environment)
+
+        # Execute the macro's statements
         evaluate(macro["statements"], macro_env)
         return None
     if ast["tag"] == "macro_definition":
@@ -260,6 +270,32 @@ def test_while_statement():
     assert env["x"] == 6
     assert env["y"] == 7
 
+def test_macro_call_with_arguments():
+    print("testing macro call with arguments")
+    env = {}
+
+    # Define a macro
+    eval("__SUMS__=(x,y){print x+y;};", env)
+
+    # Call the macro
+    eval("__SUMS__(2,3);", env)
+
+    # Ensure the macro was executed
+    assert printed_string == "5", f"Expected '5', got {printed_string}"
+
+def test_macro_call_without_arguments():
+    print("testing macro call without arguments")
+    env = {}
+
+    # Define a macro
+    eval("__LINE__=(){print 42;};", env)
+
+    # Call the macro
+    eval("__LINE__();", env)
+
+    # Ensure the macro was executed
+    assert printed_string == "42", f"Expected '42', got {printed_string}"
+
 if __name__ == "__main__":
     test_evaluate_number()
     test_evaluate_addition()
@@ -271,4 +307,8 @@ if __name__ == "__main__":
     test_evaluate_identifier()
     test_if_statement()
     test_while_statement()
+    
+    test_macro_call_with_arguments()
+    test_macro_call_without_arguments()
+    
     print("done.")
