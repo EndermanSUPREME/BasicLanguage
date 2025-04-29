@@ -706,9 +706,7 @@ def parse_statement(tokens):
         return parse_nallahab_statement(tokens)
     if tag == "macro_assign": # within parse_statement
         return parse_macro_definition(tokens)
-    if tag == "function":
-        return parse_function_statement(tokens)
-    if tag == "macro": # within parse_statement
+    if tag == "macro":  # Handle macro call
         return parse_macro_call(tokens)
     return parse_assignment_statement(tokens)
 
@@ -772,9 +770,10 @@ def test_parse_macro():
         ast, tokens = parse_factor(tokens)
         assert ast == {"tag": "macro", "value": s}, f"{ERR} Test Failed! Malformed AST --> {ast}"
         assert tokens[0]["tag"] is None
+
 def parse_macro_call(tokens):
     """
-    MACRO_CALL = MACRO [ identifier_list ] ;
+    MACRO_CALL = MACRO [ expression_list ] ;
     EXAMPLE:
             __LINE__;
             __SUMS__(2,6);
@@ -783,21 +782,38 @@ def parse_macro_call(tokens):
     assert tokens[0]["tag"] == "macro", f"Expected tag 'macro', got {tokens[0]['tag']}"
     tokens = tokens[1:]
 
-    # parse the tokens to capture the arguments used in the macro call (review macro_definition implemtation to do this)
+    # Parse the arguments if an expression_list is present
     macro_args = []
+    if tokens[0]["tag"] == "(":
+        args_ast, tokens = parse_expression_list(tokens)
+        macro_args = args_ast["expressions"]
 
-    # after parsing the macro arguments (identifier list) we expect a colon
-    assert (tokens[0]["tag"] == ";"), f"Expected ';', got {tokens[0]['tag']}"
+    # Expect a semicolon at the end of the macro call
+    assert tokens[0]["tag"] == ";", f"Expected ';', got {tokens[0]['tag']}"
+    tokens = tokens[1:]
 
     return {"tag": "macro_call", "target": macro, "args": macro_args}, tokens
+
 def test_parse_macro_call():
     print("testing parse_macro_call()")
-    tokens = tokenize("_LINE_;")
-    # print("\033[35m",end="")
-    # print(tokens)
-    # print("\033[0m",end="")
-    ast, _ = parse_statement(tokens)
-    assert ast == {"tag": "macro_call", "target": "_LINE_"}, f"{ERR} Malformed AST --> {ast}"
+
+    # Test macro call without arguments
+    tokens = tokenize("__LINE__;")
+    ast, _ = parse_macro_call(tokens)
+    assert ast == {"tag": "macro_call", "target": "__LINE__", "args": []}, f"{ERR} Malformed AST --> {ast}"
+
+    # Test macro call with arguments
+    tokens = tokenize("__SUMS__(2,6);")
+    ast, _ = parse_macro_call(tokens)
+    assert ast == {
+        "tag": "macro_call",
+        "target": "__SUMS__",
+        "args": [
+            {"tag": "number", "value": 2},
+            {"tag": "number", "value": 6}
+        ]
+    }, f"{ERR} Malformed AST --> {ast}"
+
 def parse_macro_definition(tokens):
     """
     "MACRO=" --> macro_assign
@@ -820,6 +836,7 @@ def parse_macro_definition(tokens):
             "statements" : statements
         }
     }, tokens
+
 def test_parse_macro_definition():
     print("testing parse_macro_definition()")
     tokens = tokenize("__ENDER__=(){}")
