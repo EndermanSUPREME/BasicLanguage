@@ -19,6 +19,7 @@ patterns = [
     [r"and","&&"],
     [r"or","||"],
     [r"not","!"],
+    [r"/\*.*?\*/", "comment"], # C-Style comment
     [r"true|false|True|False", "boolean"],  # boolean literals
     [r"nallahab","kentid"], # kentid
     [r"\d*\.\d+|\d+\.\d*|\d+", "number"],

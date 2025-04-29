@@ -14,7 +14,7 @@ Parser for simple expressions and statements.
 # Grammar 
 
 grammar = """
-    factor = <number> | <identifier> | <macro> | "(" expression ")" | "!" expression | "-" expression | function_literal
+    factor = <number> | <identifier> | <comment> | <macro> | "(" expression ")" | "!" expression | "-" expression | function_literal
     term = factor { "*"|"/" factor }
     arithmetic_expression = term { "+"|"-" term }
     relational_expression = arithmetic_expression { ("<" | ">" | "<=" | ">=" | "==" | "!=") arithmetic_expression }
@@ -66,6 +66,8 @@ def parse_factor(tokens):
             "tag": "macro",
             "value": token["value"]
         }, tokens[1:]
+    if token["tag"] == "comment":
+        return { "tag": "comment" }, tokens[1:]
     raise Exception(f"Unexpected token '{token['tag']}' at position {token['position']}.")
 
 def test_parse_factor():
@@ -708,6 +710,8 @@ def parse_statement(tokens):
         return parse_macro_definition(tokens)
     if tag == "macro":  # Handle macro call
         return parse_macro_call(tokens)
+    if tag == "comment":  # Handle comments
+        return parse_statement(tokens[1:])
     return parse_assignment_statement(tokens)
 
 def test_parse_statement():
@@ -737,6 +741,11 @@ def parse_program(tokens):
 
             statement, tokens = parse_statement(tokens)
             statements.append(statement)
+
+            # check for stray comment
+            if tokens[0]["tag"] == "comment":
+                tokens = tokens[1:]
+
     assert tokens[0]["tag"] is None, f"Expected end of input at position {tokens[0]['position']}, got [{tokens[0]}]"
     return {"tag": "program", "statements": statements}, tokens[1:]
 
@@ -788,9 +797,8 @@ def parse_macro_call(tokens):
         args_ast, tokens = parse_expression_list(tokens)
         macro_args = args_ast["expressions"]
 
-    # Expect a semicolon at the end of the macro call
+    # Expect a semicolon at the end of the macro call (DO NOT CONSUME THIS ; TOKEN)
     assert tokens[0]["tag"] == ";", f"Expected ';', got {tokens[0]['tag']}"
-    tokens = tokens[1:]
 
     return {"tag": "macro_call", "target": macro, "args": macro_args}, tokens
 
