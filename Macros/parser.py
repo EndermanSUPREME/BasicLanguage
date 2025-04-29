@@ -802,6 +802,11 @@ def test_parse_macro_call():
     ast, _ = parse_macro_call(tokens)
     assert ast == {"tag": "macro_call", "target": "__LINE__", "args": []}, f"{ERR} Malformed AST --> {ast}"
 
+    # Test macro call with arguments list but no args specified
+    tokens = tokenize("__LINE__();")
+    ast, _ = parse_macro_call(tokens)
+    assert ast == {"tag": "macro_call", "target": "__LINE__", "args": []}, f"{ERR} Malformed AST --> {ast}"
+
     # Test macro call with arguments
     tokens = tokenize("__SUMS__(2,6);")
     ast, _ = parse_macro_call(tokens)
